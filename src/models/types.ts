@@ -10,6 +10,11 @@ export interface TokenUsage {
 export interface AntigravitySession {
   cookies: string;
   userId?: string;
+  userData?: {
+    name: string;
+    email: string;
+    userStatusProtoBinaryBase64?: string;
+  };
 }
 
 export interface NotificationState {

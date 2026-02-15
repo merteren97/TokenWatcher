@@ -2,7 +2,7 @@
   "name": "antigravitytokenwatcher",
   "displayName": "Antigravity Token Watcher",
   "description": "VSCode eklentisi - Antigravity token kullanımınızı takip edin",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "publisher": "antigravity-watcher",
   "repository": {
     "type": "git",
@@ -41,18 +41,14 @@
         "icon": "$(graph)"
       },
       {
-        "command": "antigravitytokenwatcher.setApiKey",
-        "title": "Antigravity: Manuel API Key Ayarla"
+        "command": "antigravitytokenwatcher.reconnect",
+        "title": "Antigravity: Yeniden Bağlan",
+        "icon": "$(debug-restart)"
       }
     ],
     "configuration": {
       "title": "Antigravity Token Watcher",
       "properties": {
-        "antigravitytokenwatcher.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "Antigravity API Key (opsiyonel - cookie otomatik kullanılır)"
-        },
         "antigravitytokenwatcher.refreshInterval": {
           "type": "number",
           "default": 5,

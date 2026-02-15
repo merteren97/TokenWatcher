@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { AntigravityAPI } from './api/antigravity';
-import { CookieExtractor } from './auth/cookieExtractor';
+import { ProcessFinder, ProcessInfo } from './auth/processFinder';
 import { StatusBarManager } from './ui/statusBar';
 import { DetailPanel } from './ui/webviewPanel';
 import { TokenUsage, NotificationState } from './models/types';
@@ -8,7 +8,8 @@ import { REFRESH_INTERVAL_MS, NOTIFICATION_THRESHOLDS } from './utils/constants'
 
 let statusBarManager: StatusBarManager;
 let apiClient: AntigravityAPI;
-let cookieExtractor: CookieExtractor;
+let processFinder: ProcessFinder;
+let processInfo: ProcessInfo | null = null;
 let refreshInterval: NodeJS.Timeout | null = null;
 let notificationState: NotificationState = {
   eightyPercent: false,
@@ -16,6 +17,7 @@ let notificationState: NotificationState = {
   ninetyFivePercent: false,
   ninetyNinePercent: false
 };
+let isInitialized = false;
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log('Antigravity Token Watcher aktif edildi');
@@ -23,32 +25,19 @@ export async function activate(context: vscode.ExtensionContext) {
   // Servisleri başlat
   statusBarManager = new StatusBarManager();
   apiClient = new AntigravityAPI();
-  cookieExtractor = new CookieExtractor();
+  processFinder = new ProcessFinder();
 
   // Komutları kaydet
   context.subscriptions.push(
     vscode.commands.registerCommand('antigravitytokenwatcher.refresh', refreshTokenUsage),
     vscode.commands.registerCommand('antigravitytokenwatcher.showDetails', showDetails),
-    vscode.commands.registerCommand('antigravitytokenwatcher.setApiKey', setApiKey)
+    vscode.commands.registerCommand('antigravitytokenwatcher.reconnect', reconnect)
   );
 
-  // Cookie veya API key ile oturum başlat
-  await initializeSession();
-
-  // İlk veri çekme
-  await refreshTokenUsage();
-
-  // Otomatik yenileme başlat
-  startAutoRefresh();
-
-  // Configuration değişikliklerini dinle
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('antigravitytokenwatcher.refreshInterval')) {
-        startAutoRefresh();
-      }
-    })
-  );
+  // Asenkron olarak başlat (VSCode startup'ı bloklamamak için)
+  initializeExtension().catch(err => {
+    console.error('Initialization failed:', err);
+  });
 
   // Cleanup
   context.subscriptions.push({
@@ -61,53 +50,66 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 }
 
-async function initializeSession() {
-  const config = vscode.workspace.getConfiguration('antigravitytokenwatcher');
-  const apiKey = config.get<string>('apiKey');
-
-  // Önce API key dene
-  if (apiKey && apiKey.length > 0) {
-    const isValid = await apiClient.authenticateWithApiKey(apiKey);
-    if (isValid) {
-      vscode.window.showInformationMessage('Antigravity: API Key ile giriş yapıldı');
-      return;
-    }
+async function initializeExtension() {
+  if (isInitialized) {
+    return;
   }
 
-  // Cookie ile dene
-  const session = await cookieExtractor.extractSession();
-  if (session) {
-    apiClient.setSession(session);
-    const isValid = await apiClient.validateSession();
-    if (isValid) {
-      vscode.window.showInformationMessage('Antigravity: Chrome/Edge oturumu bulundu');
-      return;
-    }
-  }
+  statusBarManager.updateLoading();
 
-  // Fallback: Local storage'dan dene
-  const session2 = await cookieExtractor.extractFromLocalStorage();
-  if (session2) {
-    apiClient.setSession(session2);
-    const isValid = await apiClient.validateSession();
-    if (isValid) {
-      return;
-    }
-  }
+  try {
+    // Antigravity process'ini bul
+    processInfo = await processFinder.detectProcessInfo();
 
-  // Hiçbiri çalışmadı
-  statusBarManager.updateError('Oturum bulunamadı');
-  vscode.window.showWarningMessage(
-    'Antigravity: Chrome/Edge oturumu bulunamadı. Ayarlardan API Key ekleyebilirsiniz.',
-    'API Key Ayarla'
-  ).then((selection) => {
-    if (selection === 'API Key Ayarla') {
-      setApiKey();
+    if (processInfo) {
+      console.log('Antigravity process bulundu:', {
+        pid: processInfo.pid,
+        port: processInfo.connectPort
+      });
+
+      // API client'ı başlat
+      apiClient.init(processInfo.connectPort, processInfo.csrfToken);
+
+      // İlk veri çekme
+      await refreshTokenUsage();
+
+      // Otomatik yenileme başlat
+      startAutoRefresh();
+
+      isInitialized = true;
+    } else {
+      statusBarManager.updateError('Antigravity bulunamadı');
+      vscode.window.showWarningMessage(
+        'Antigravity IDE çalışmıyor. Lütfen Antigravity\'yi başlatın ve yeniden bağlanmayı deneyin.',
+        'Yeniden Bağlan'
+      ).then((selection) => {
+        if (selection === 'Yeniden Bağlan') {
+          reconnect();
+        }
+      });
     }
-  });
+  } catch (error) {
+    console.error('Extension initialization error:', error);
+    statusBarManager.updateError('Başlatma hatası');
+  }
+}
+
+async function reconnect() {
+  isInitialized = false;
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
+  }
+  
+  vscode.window.showInformationMessage('Antigravity\'ye yeniden bağlanılıyor...');
+  await initializeExtension();
 }
 
 async function refreshTokenUsage() {
+  if (!isInitialized) {
+    return;
+  }
+
   statusBarManager.updateLoading();
   
   const usage = await apiClient.fetchTokenUsage();
@@ -131,28 +133,6 @@ function showDetails() {
     DetailPanel.createOrShow(vscode.extensions.getExtension('antigravitytokenwatcher')!.extensionUri, usage);
   } else {
     vscode.window.showWarningMessage('Henüz token verisi yok. Yenilemeyi deneyin.');
-  }
-}
-
-async function setApiKey() {
-  const apiKey = await vscode.window.showInputBox({
-    prompt: 'Antigravity API Key\'inizi girin',
-    password: true,
-    ignoreFocusOut: true,
-    placeHolder: 'API Key'
-  });
-
-  if (apiKey) {
-    const config = vscode.workspace.getConfiguration('antigravitytokenwatcher');
-    await config.update('apiKey', apiKey, true);
-    
-    const isValid = await apiClient.authenticateWithApiKey(apiKey);
-    if (isValid) {
-      vscode.window.showInformationMessage('Antigravity: API Key kaydedildi ve doğrulandı');
-      await refreshTokenUsage();
-    } else {
-      vscode.window.showErrorMessage('Antigravity: API Key geçersiz');
-    }
   }
 }
 

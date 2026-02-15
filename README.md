@@ -1,8 +1,23 @@
 # Antigravity Token Watcher
 
-VSCode için Antigravity AI token kullanım takip eklentisi. Token limitinizi, kullanım yüzdenizi ve reset tarihini gerçek zamanlı takip edin.
+VSCode/Antigravity için token kullanım takip eklentisi. Antigravity IDE'nin yerel API'sini kullanarak gerçek zamanlı token kullanımınızı takip edin.
 
-## Özellikler
+## 🎯 Yeni Çalışma Prensibi
+
+**Artık çok daha basit!** Eklenti, Antigravity IDE'nin kendi yerel API'sine bağlanır:
+
+1. **Otomatik Process Bulma**: `language_server_windows_x64.exe` process'ini otomatik bulur
+2. **Port Tespiti**: Dinleme yapan port'ları tarar ve doğru olanı bulur
+3. **Yerel API**: `GetUserStatus` endpoint'inden kullanım verilerini alır
+4. **Gerçek Zamanlı**: Her 5 dakikada bir otomatik güncelleme
+
+**Artık gerek yok:**
+- ❌ Cookie okuma
+- ❌ API Key girmek
+- ❌ Chrome/Edge ile uğraşmak
+- ❌ Manuel giriş yapmak
+
+## ✨ Özellikler
 
 ### 🎯 Gerçek Zamanlı Takip
 - **Status Bar**: Sağ altta anlık kullanım yüzdesi (örn: "AG: 73%")
@@ -25,52 +40,32 @@ VSCode için Antigravity AI token kullanım takip eklentisi. Token limitinizi, k
 - **%95**: "Kritik! Sadece %5 kaldı"
 - **%99**: "ACİL! Limit dolmak üzere!"
 
-### 🔐 Otomatik Oturum Yönetimi
-- Chrome/Edge tarayıcılarından otomatik cookie tespiti
-- Windows DPAPI şifre çözme desteği
-- Manuel API Key desteği (yedek olarak)
-- Çoklu profil desteği (Default, Profile 1, 2, 3)
+## 🚀 Kurulum
 
-## Kurulum
+### VSIX ile Manuel Kurulum
+
+1. **Paketi indirin:**
+   ```bash
+   antigravitytokenwatcher-1.0.1.vsix
+   ```
+
+2. **Antigravity IDE'de kurun:**
+   - Extensions view (Ctrl+Shift+X)
+   - `...` menüsü > "Install from VSIX"
+   - `.vsix` dosyasını seçin
 
 ### Gereksinimler
-- Windows 10/11
-- VSCode 1.74.0 veya üzeri
-- Chrome veya Edge (cookie otomatik tespit için)
+- **Antigravity IDE** yüklü ve çalışıyor olmalı
+- Windows 10/11 (şu an sadece Windows desteği)
 
-### Adımlar
+## 🎮 Kullanım
 
-1. **Bağımlılıkları yükle:**
-```bash
-cd AntigravityTokenWatcher
-npm install
-```
-
-2. **Derle:**
-```bash
-npm run compile
-```
-
-3. **VSCode'da çalıştır:**
-- VSCode'da projeyi açın
-- `F5` tuşuna basarak Debug modunda çalıştırın
-- Yeni bir Extension Development Host penceresi açılacak
-
-### VSIX Paketi Oluşturma
-
-```bash
-npm install -g @vscode/vsce
-vsce package
-```
-
-Oluşan `.vsix` dosyasını VSCode'da şu şekilde yükleyin:
-- Extensions view (Ctrl+Shift+X)
-- `...` menüsü > "Install from VSIX"
-
-## Kullanım
-
-### Otomatik Başlatma
-Eklenti VSCode açıldığında otomatik başlar ve Chrome/Edge cookie'lerini arar.
+### Otomatik Çalışma
+Eklenti Antigravity IDE açıldığında otomatik:
+1. ✅ Process'i bulur
+2. ✅ API'ye bağlanır
+3. ✅ Token verilerini çeker
+4. ✅ Status bar'ı günceller
 
 ### Manuel İşlemler
 
@@ -80,34 +75,31 @@ Eklenti VSCode açıldığında otomatik başlar ve Chrome/Edge cookie'lerini ar
 
 **Detaylı bilgi göster:**
 - Command Palette > "Antigravity: Detaylı Kullanım Bilgileri"
-- Status bar'a tıklayın
 
-**API Key ayarla:**
-- Command Palette > "Antigravity: Manuel API Key Ayarla"
-- Settings > "Antigravity Token Watcher" > "API Key"
+**Yeniden bağlan (sorun olursa):**
+- Command Palette > "Antigravity: Yeniden Bağlan"
 
 ### Ayarlar
 
-VSCode Settings (Ctrl+,) üzerinden şu ayarları değiştirebilirsiniz:
+VSCode Settings (Ctrl+,) üzerinden:
 
 ```json
 {
-  "antigravitytokenwatcher.apiKey": "",              // Manuel API Key
   "antigravitytokenwatcher.refreshInterval": 5,      // Yenileme aralığı (dakika)
   "antigravitytokenwatcher.showNotifications": true  // Bildirimleri göster
 }
 ```
 
-## Mimari
+## 🏗️ Mimari
 
 ```
 AntigravityTokenWatcher/
 ├── src/
 │   ├── extension.ts           # Ana giriş noktası
 │   ├── auth/
-│   │   └── cookieExtractor.ts # Windows cookie çözme
+│   │   └── processFinder.ts   # Process bulma ve bağlantı
 │   ├── api/
-│   │   └── antigravity.ts     # API istekleri
+│   │   └── antigravity.ts     # Yerel API istekleri
 │   ├── ui/
 │   │   ├── statusBar.ts       # Status bar yönetimi
 │   │   └── webviewPanel.ts    # Detay paneli
@@ -120,57 +112,48 @@ AntigravityTokenWatcher/
 └── tsconfig.json             # TypeScript config
 ```
 
-## Sorun Giderme
+## 🔧 Sorun Giderme
 
-### "Oturum bulunamadı" hatası
-1. Chrome/Edge'de antigravity.google.com'a giriş yaptığınızdan emin olun
-2. Eklentiyi yeniden başlatın (Ctrl+Shift+P > "Developer: Reload Window")
-3. Manuel API Key ekleyin
+### "Antigravity bulunamadı" hatası
+1. Antigravity IDE'nin çalıştığından emin olun
+2. Command Palette > "Antigravity: Yeniden Bağlan" deneyin
+3. Antigravity'yi yeniden başlatın
 
-### Cookie şifre çözme hatası
-- Python ve `pywin32` paketi gerekebilir:
-```bash
-pip install pywin32
+### "Veri alınamadı" hatası
+- Antigravity IDE'nin güncel olduğundan emin olun
+- Eklentiyi yeniden başlatın (Ctrl+Shift+P > "Developer: Reload Window")
+
+## ⚙️ Teknik Detaylar
+
+### API Endpoint
+```
+POST https://127.0.0.1:{port}/exa.language_server_pb.LanguageServerService/GetUserStatus
+Headers:
+  - Content-Type: application/json
+  - Connect-Protocol-Version: 1
+  - X-Codeium-Csrf-Token: {csrf_token}
 ```
 
-### Veriler güncellenmiyor
-- Token yenileme butonuna basın
-- Ayarlardan yenileme aralığını kontrol edin
-- API endpoint'lerinin erişilebilir olduğunu doğrulayın
-
-## Güvenlik
-
-- Cookie'ler sadece yerel olarak okunur, hiçbir yere gönderilmez
-- API Key'ler VSCode'un güvenli ayar deposunda saklanır
-- Hiçbir kullanım verisi dışarı aktarılmaz
-
-## Geliştirme
-
-### Kodlama Standartları
-- TypeScript strict mode
-- ESLint kuralları
-- Anlamlı değişken/fonksiyon isimleri
-
-### Test
-```bash
-npm test
+### Process Bulma
+```powershell
+# Windows PowerShell
+Get-CimInstance Win32_Process -Filter "name='language_server_windows_x64.exe'"
 ```
 
-### Debug
-- `.vscode/launch.json` yapılandırması mevcut
-- F5 ile debug modunda başlatın
-- Extension Development Host'ta test edin
+## 📝 Changelog
 
-## Yol Haritası
+### v1.0.1
+- ✅ **YENİ**: Antigravity yerel API entegrasyonu
+- ✅ **YENİ**: Otomatik process bulma
+- ✅ **İYİLEŞTİRME**: Cookie/API Key gereksinimi kaldırıldı
+- ✅ **İYİLEŞTİRME**: Çok daha hızlı ve güvenilir
 
-- [ ] Mac/Linux desteği
-- [ ] Firefox cookie tespiti
-- [ ] Kullanım geçmişi grafiği
-- [ ] Maliyet hesaplama (Pro/Ultra planları için)
-- [ ] Çoklu hesap desteği
-- [ ] Otomatik limit artırma önerileri
+### v1.0.0
+- 🎉 İlk sürüm
+- Cookie bazlı auth
+- Manuel API Key desteği
 
-## Katkıda Bulunma
+## 🤝 Katkıda Bulunma
 
 1. Fork yapın
 2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
@@ -178,13 +161,13 @@ npm test
 4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
 5. Pull Request açın
 
-## Lisans
+## 📄 Lisans
 
-MIT License - Detaylar için [LICENSE](LICENSE) dosyasına bakın.
+MIT License
 
-## İletişim
+## 🙏 Teşekkürler
 
-Sorularınız veya önerileriniz için GitHub Issues kullanabilirsiniz.
+Bu proje [Henrik-3/AntigravityQuota](https://github.com/Henrik-3/AntigravityQuota) reposundaki teknik detaylardan ilham almıştır.
 
 ---
 
