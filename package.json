@@ -1,0 +1,83 @@
+{
+  "name": "antigravitytokenwatcher",
+  "displayName": "Antigravity Token Watcher",
+  "description": "VSCode eklentisi - Antigravity token kullanımınızı takip edin",
+  "version": "1.0.0",
+  "publisher": "antigravity-watcher",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/merteren97/antigravitytokenwatcher"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Visualization"
+  ],
+  "keywords": [
+    "antigravity",
+    "token",
+    "usage",
+    "ai",
+    "gemini",
+    "tracker"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "antigravitytokenwatcher.refresh",
+        "title": "Antigravity: Token Verilerini Yenile",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "antigravitytokenwatcher.showDetails",
+        "title": "Antigravity: Detaylı Kullanım Bilgileri",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "antigravitytokenwatcher.setApiKey",
+        "title": "Antigravity: Manuel API Key Ayarla"
+      }
+    ],
+    "configuration": {
+      "title": "Antigravity Token Watcher",
+      "properties": {
+        "antigravitytokenwatcher.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Antigravity API Key (opsiyonel - cookie otomatik kullanılır)"
+        },
+        "antigravitytokenwatcher.refreshInterval": {
+          "type": "number",
+          "default": 5,
+          "description": "Otomatik yenileme aralığı (dakika)"
+        },
+        "antigravitytokenwatcher.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Token limit uyarı bildirimlerini göster"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "sqlite3": "^5.1.6"
+  }
+}
