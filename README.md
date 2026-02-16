@@ -11,12 +11,6 @@ VSCode/Antigravity için token kullanım takip eklentisi. Antigravity IDE'nin ye
 3. **Yerel API**: `GetUserStatus` endpoint'inden kullanım verilerini alır
 4. **Gerçek Zamanlı**: Her 5 dakikada bir otomatik güncelleme
 
-**Artık gerek yok:**
-- ❌ Cookie okuma
-- ❌ API Key girmek
-- ❌ Chrome/Edge ile uğraşmak
-- ❌ Manuel giriş yapmak
-
 ## ✨ Özellikler
 
 ### 🎯 Gerçek Zamanlı Takip
