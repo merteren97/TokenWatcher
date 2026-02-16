@@ -1,57 +1,57 @@
 import { TokenUsage } from '../models/types';
 
 export function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
-  }
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
-  }
-  return num.toString();
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
 }
 
 export function formatTimeRemaining(resetTime: Date): string {
-  const now = new Date();
-  const diff = resetTime.getTime() - now.getTime();
-  
-  if (diff <= 0) {
-    return 'Yenileniyor...';
-  }
-  
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (hours > 0) {
-    return `${hours} saat ${minutes} dk`;
-  }
-  return `${minutes} dk`;
+    const now = new Date();
+    const diff = resetTime.getTime() - now.getTime();
+
+    if (diff <= 0) {
+        return 'Yenileniyor...';
+    }
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours > 0) {
+        return `${hours} saat ${minutes} dk`;
+    }
+    return `${minutes} dk`;
 }
 
 export function getStatusBarColor(percentage: number): string {
-  if (percentage >= 95) return '#FF0000'; // Kırmızı
-  if (percentage >= 90) return '#FF8C00'; // Turuncu
-  if (percentage >= 80) return '#FFD700'; // Sarı
-  return '#00FF00'; // Yeşil
+    if (percentage >= 95) return '#FF0000'; // Kırmızı
+    if (percentage >= 90) return '#FF8C00'; // Turuncu
+    if (percentage >= 80) return '#FFD700'; // Sarı
+    return '#00FF00'; // Yeşil
 }
 
 export function getStatusBarIcon(percentage: number): string {
-  if (percentage >= 95) return '$(error)';
-  if (percentage >= 90) return '$(warning)';
-  if (percentage >= 80) return '$(info)';
-  return '$(check)';
+    if (percentage >= 95) return '$(error)';
+    if (percentage >= 90) return '$(warning)';
+    if (percentage >= 80) return '$(info)';
+    return '$(check)';
 }
 
 export function generateWebviewContent(usage: TokenUsage): string {
-  const percentage = usage.percentage;
-  const circumference = 2 * Math.PI * 90;
-  const offset = circumference - (percentage / 100) * circumference;
-  
-  let color = '#00FF00';
-  if (percentage >= 95) color = '#FF0000';
-  else if (percentage >= 90) color = '#FF8C00';
-  else if (percentage >= 80) color = '#FFD700';
-  
-  return `<!DOCTYPE html>
+    const percentage = usage.percentage;
+    const circumference = 2 * Math.PI * 90;
+    const offset = circumference - (percentage / 100) * circumference;
+
+    let color = '#00FF00';
+    if (percentage >= 95) color = '#FF0000';
+    else if (percentage >= 90) color = '#FF8C00';
+    else if (percentage >= 80) color = '#FFD700';
+
+    return `<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -140,6 +140,34 @@ export function generateWebviewContent(usage: TokenUsage): string {
             font-size: 20px;
             font-weight: bold;
         }
+        .models-container {
+            margin-top: 30px;
+        }
+        .model-card {
+            background: var(--vscode-input-background);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .model-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .model-stats {
+            text-align: right;
+        }
+        .model-percentage {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--vscode-charts-blue);
+        }
+        .model-reset {
+            font-size: 12px;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
@@ -186,6 +214,24 @@ export function generateWebviewContent(usage: TokenUsage): string {
 
         <div style="text-align: center;">
             <span class="plan-badge plan-${usage.plan}">${usage.plan.toUpperCase()}</span>
+        </div>
+
+        <div class="models-container">
+            <h3>Model Kotaları</h3>
+            ${usage.modelQuotas && usage.modelQuotas.length > 0 ? usage.modelQuotas.map(model => `
+                <div class="model-card">
+                    <div class="model-info">
+                        <div class="model-name">${model.name}</div>
+                        <div class="model-reset">Sıfırlanma: ${model.resetTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-percentage" style="color: ${getStatusBarColor(100 - model.remaining)}">
+                            ${Math.round(model.remaining)}%
+                        </div>
+                        <div class="model-reset" style="font-size: 10px;">Kalan</div>
+                    </div>
+                </div>
+            `).join('') : '<div style="text-align: center; opacity: 0.6;">Model bilgisi bulunamadı</div>'}
         </div>
 
         <div class="reset-info">

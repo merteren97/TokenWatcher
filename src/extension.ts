@@ -100,7 +100,7 @@ async function reconnect() {
     clearInterval(refreshInterval);
     refreshInterval = null;
   }
-  
+
   vscode.window.showInformationMessage('Antigravity\'ye yeniden bağlanılıyor...');
   await initializeExtension();
 }
@@ -111,13 +111,13 @@ async function refreshTokenUsage() {
   }
 
   statusBarManager.updateLoading();
-  
+
   const usage = await apiClient.fetchTokenUsage();
-  
+
   if (usage) {
     statusBarManager.update(usage);
     checkNotifications(usage);
-    
+
     // Eğer detay paneli açıksa, onu da güncelle
     if (DetailPanel.currentPanel) {
       DetailPanel.currentPanel.update(usage);
@@ -130,7 +130,7 @@ async function refreshTokenUsage() {
 function showDetails() {
   const usage = statusBarManager.getCurrentUsage();
   if (usage) {
-    DetailPanel.createOrShow(vscode.extensions.getExtension('antigravitytokenwatcher')!.extensionUri, usage);
+    DetailPanel.createOrShow(vscode.extensions.getExtension('antigravity-watcher.antigravitytokenwatcher')!.extensionUri, usage);
   } else {
     vscode.window.showWarningMessage('Henüz token verisi yok. Yenilemeyi deneyin.');
   }
@@ -154,7 +154,7 @@ function startAutoRefresh() {
 function checkNotifications(usage: TokenUsage) {
   const config = vscode.workspace.getConfiguration('antigravitytokenwatcher');
   const showNotifications = config.get<boolean>('showNotifications');
-  
+
   if (!showNotifications) return;
 
   const percentage = usage.percentage;

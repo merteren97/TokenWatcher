@@ -1,3 +1,9 @@
+export interface ModelQuota {
+  name: string;
+  remaining: number; // percentage 0-100
+  resetTime: Date;
+}
+
 export interface TokenUsage {
   used: number;
   total: number;
@@ -5,6 +11,7 @@ export interface TokenUsage {
   percentage: number;
   resetTime: Date;
   plan: 'free' | 'pro' | 'ultra';
+  modelQuotas: ModelQuota[];
 }
 
 export interface AntigravitySession {

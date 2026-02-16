@@ -1,5 +1,5 @@
 import * as https from 'https';
-import { TokenUsage } from '../models/types';
+import { TokenUsage, ModelQuota } from '../models/types';
 
 export interface UserStatusResponse {
   userStatus?: {
@@ -104,12 +104,25 @@ export class AntigravityAPI {
     const models = userStatus.cascadeModelConfigData?.clientModelConfigs || [];
 
     // Prompt credits bilgisi
-    const monthlyCredits = planStatus?.planInfo?.monthlyPromptCredits 
-      ? parseInt(planStatus.planInfo.monthlyPromptCredits, 10) 
+    const monthlyCredits = planStatus?.planInfo?.monthlyPromptCredits
+      ? parseInt(planStatus.planInfo.monthlyPromptCredits, 10)
       : 0;
-    const availableCredits = planStatus?.availablePromptCredits 
-      ? parseInt(planStatus.availablePromptCredits, 10) 
+    const availableCredits = planStatus?.availablePromptCredits
+      ? parseInt(planStatus.availablePromptCredits, 10)
       : 0;
+
+    // Eğer veriler alınamadıysa veya 0 gelirse, mantıksız %100 kullanım göstermemek için kontrol et
+    if (monthlyCredits === 0 && availableCredits === 0) {
+      return {
+        used: 0,
+        total: 0,
+        remaining: 0,
+        percentage: 0,
+        resetTime: new Date(),
+        plan: 'free',
+        modelQuotas: []
+      };
+    }
 
     // Kullanılan kredileri hesapla
     const usedCredits = monthlyCredits - availableCredits;
@@ -119,10 +132,22 @@ export class AntigravityAPI {
     let resetTime = new Date();
     resetTime.setHours(resetTime.getHours() + 5); // Varsayılan 5 saat
 
+    const modelQuotas: ModelQuota[] = [];
+
     for (const model of models) {
       if (model.quotaInfo?.resetTime) {
-        resetTime = new Date(model.quotaInfo.resetTime);
-        break;
+        const modelResetTime = new Date(model.quotaInfo.resetTime);
+
+        // İlk geçerli reset zamanını ana reset zamanı olarak al (veya en yakın olanı)
+        if (modelQuotas.length === 0) {
+          resetTime = modelResetTime;
+        }
+
+        modelQuotas.push({
+          name: model.label || model.modelOrAlias?.model || 'Unknown Model',
+          remaining: (model.quotaInfo.remainingFraction || 0) * 100,
+          resetTime: modelResetTime
+        });
       }
     }
 
@@ -141,7 +166,8 @@ export class AntigravityAPI {
       remaining: availableCredits,
       percentage,
       resetTime,
-      plan
+      plan,
+      modelQuotas
     };
   }
 

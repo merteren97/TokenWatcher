@@ -2,7 +2,7 @@
   "name": "antigravitytokenwatcher",
   "displayName": "Antigravity Token Watcher",
   "description": "VSCode eklentisi - Antigravity token kullanımınızı takip edin",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "antigravity-watcher",
   "repository": {
     "type": "git",

@@ -55,7 +55,7 @@ export class ProcessFinder {
     }
   }
 
-  private async findAntigravityProcess(): Promise<{pid: number; extensionPort: number; csrfToken: string} | null> {
+  private async findAntigravityProcess(): Promise<{ pid: number; extensionPort: number; csrfToken: string } | null> {
     if (os.platform() !== 'win32') {
       // Unix/Mac için basit implementasyon
       try {
@@ -66,10 +66,10 @@ export class ProcessFinder {
             const parts = line.trim().split(/\s+/);
             const pid = parseInt(parts[0], 10);
             const cmd = line.substring(parts[0].length).trim();
-            
+
             const portMatch = cmd.match(/--extension_server_port[=\s]+(\d+)/);
             const tokenMatch = cmd.match(/--csrf_token[=\s]+([a-f0-9\-]+)/i);
-            
+
             if (tokenMatch && tokenMatch[1]) {
               return {
                 pid,
@@ -87,35 +87,35 @@ export class ProcessFinder {
 
     // Windows PowerShell komutu
     const cmd = `powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"name='${this.processName}'\\" | Select-Object ProcessId,CommandLine | ConvertTo-Json"`;
-    
+
     try {
       const { stdout } = await execAsync(cmd);
       const data = JSON.parse(stdout.trim());
-      
+
       let processes = Array.isArray(data) ? data : [data];
-      
+
       // Antigravity process'ini bul
       const antigravityProcesses = processes.filter((p: any) => {
         const cmdLine = (p.CommandLine || '').toLowerCase();
-        return cmdLine.includes('antigravity') || 
-               /--app_data_dir\s+antigravity/i.test(p.CommandLine);
+        return cmdLine.includes('antigravity') ||
+          /--app_data_dir\s+antigravity/i.test(p.CommandLine);
       });
-      
+
       if (antigravityProcesses.length === 0) {
         return null;
       }
-      
+
       const process = antigravityProcesses[0];
       const commandLine = process.CommandLine || '';
       const pid = process.ProcessId;
-      
+
       const portMatch = commandLine.match(/--extension_server_port[=\s]+(\d+)/);
       const tokenMatch = commandLine.match(/--csrf_token[=\s]+([a-f0-9\-]+)/i);
-      
+
       if (!tokenMatch || !tokenMatch[1]) {
         return null;
       }
-      
+
       return {
         pid,
         extensionPort: portMatch ? parseInt(portMatch[1], 10) : 0,
@@ -145,12 +145,18 @@ export class ProcessFinder {
     }
 
     // Windows PowerShell
-    const cmd = `powershell -NoProfile -Command "Get-NetTCPConnection -OwningProcess ${pid} -State Listen | Select-Object -ExpandProperty LocalPort | ConvertTo-Json"`;
-    
+    // Sadece 127.0.0.1 üzerindeki dinleyen portları al
+    const cmd = `powershell -NoProfile -Command "Get-NetTCPConnection -OwningProcess ${pid} -State Listen | Where-Object { $_.LocalAddress -eq '127.0.0.1' } | Select-Object -ExpandProperty LocalPort | ConvertTo-Json"`;
+
     try {
       const { stdout } = await execAsync(cmd);
-      const data = JSON.parse(stdout.trim());
-      
+      let data;
+      try {
+        data = JSON.parse(stdout.trim());
+      } catch {
+        return [];
+      }
+
       if (Array.isArray(data)) {
         return data.filter((p: any) => typeof p === 'number').sort((a, b) => a - b);
       } else if (typeof data === 'number') {
